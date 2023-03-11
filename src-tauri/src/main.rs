@@ -17,12 +17,7 @@ struct DesktopEntry {
 
 impl DesktopEntry {
     fn from_file(path: PathBuf) -> Result<DesktopEntry, &'static str> {
-        if !(path
-            .extension()
-            .and_then(OsStr::to_str)
-            .expect("has extension")
-            == "desktop")
-        {
+        if !path.extension().map_or(false, |ext| ext == "desktop") {
             return Err("Must provide desktop file");
         }
 
@@ -30,14 +25,13 @@ impl DesktopEntry {
         if read_result.is_err() {
             return Err("Could not parse entry");
         }
-        let entry = read_result.unwrap();
 
+        let entry = read_result.unwrap();
         if !entry.has_section("Desktop Entry") {
             return Err("Not valid Desktop Entry");
         }
 
         let desktop_section = entry.section("Desktop Entry");
-
         if !desktop_section.has_attr("Name") || !desktop_section.has_attr("Exec") {
             return Err("Not a named executable");
         }
@@ -58,20 +52,12 @@ impl DesktopEntry {
 #[tauri::command]
 fn all_apps(search_input: &str) -> Vec<DesktopEntry> {
     let dir = fs::read_dir("/usr/share/applications").expect("desktop apps are readable");
-    let mut results = Vec::new();
-    for entry in dir
-        .filter(|entry| entry.is_ok())
-        .map(|entry| entry.unwrap())
-    {
-        let file_type = entry.file_type().expect("can read file type");
-        if file_type.is_file() {
-            if let Ok(desktop_entry) = DesktopEntry::from_file(entry.path()) {
-                results.push(desktop_entry);
-            }
-        }
-    }
-
-    return results;
+    return dir
+        .filter_map(|result| result.ok())
+        .filter(|entry| entry.file_type().is_ok() && entry.file_type().unwrap().is_file())
+        .map(|entry| DesktopEntry::from_file(entry.path()))
+        .filter_map(|desktop_entry| desktop_entry.ok())
+        .collect();
 }
 
 fn main() {
