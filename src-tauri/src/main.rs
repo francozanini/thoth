@@ -2,7 +2,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use freedesktop_entry_parser::parse_entry;
+use std::error::Error;
 use std::ffi::{OsStr, OsString};
+use std::fmt::{Debug, Display, Formatter};
 use std::fs;
 use std::fs::{DirEntry, File};
 use std::path::PathBuf;
@@ -15,25 +17,28 @@ struct DesktopEntry {
     exec: String,
 }
 
+#[derive(Debug)]
+struct UnreadableEntry;
+
+impl Display for UnreadableEntry {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Can not retrieve this desktop entry")
+    }
+}
+
+impl Error for UnreadableEntry {}
+
 impl DesktopEntry {
-    fn from_file(path: PathBuf) -> Result<DesktopEntry, &'static str> {
+    fn from_file(path: PathBuf) -> Result<DesktopEntry, UnreadableEntry> {
         if !path.extension().map_or(false, |ext| ext == "desktop") {
-            return Err("Must provide desktop file");
+            return Err(UnreadableEntry);
         }
 
-        let read_result = parse_entry(path);
-        if read_result.is_err() {
-            return Err("Could not parse entry");
-        }
-
-        let entry = read_result.unwrap();
-        if !entry.has_section("Desktop Entry") {
-            return Err("Not valid Desktop Entry");
-        }
+        let entry = parse_entry(path).map_err(|err| UnreadableEntry)?;
 
         let desktop_section = entry.section("Desktop Entry");
         if !desktop_section.has_attr("Name") || !desktop_section.has_attr("Exec") {
-            return Err("Not a named executable");
+            return Err(UnreadableEntry);
         }
 
         return Ok(DesktopEntry {
