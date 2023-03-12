@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use freedesktop_entry_parser::parse_entry;
+extern crate levenshtein;
 use std::error::Error;
 use std::ffi::{OsStr, OsString};
 use std::fmt::{Debug, Display, Formatter};
@@ -9,6 +9,9 @@ use std::fs;
 use std::fs::{DirEntry, File};
 use std::path::PathBuf;
 use std::str::FromStr;
+
+use freedesktop_entry_parser::parse_entry;
+use levenshtein::levenshtein;
 
 #[derive(serde::Serialize)]
 struct DesktopEntry {
@@ -57,9 +60,21 @@ impl DesktopEntry {
 #[tauri::command]
 fn all_apps(search_input: &str) -> Vec<DesktopEntry> {
     let dir = fs::read_dir("/usr/share/applications").expect("desktop apps are readable");
-    return dir
+    let mut vec = dir
         .filter_map(|result| result.ok())
-        .filter(|entry| entry.file_type().is_ok() && entry.file_type().unwrap().is_file())
+        .filter(|entry| entry.file_type().map_or(false, |ft| ft.is_file()))
+        .collect::<Vec<DirEntry>>();
+
+    vec.sort_by(|a, b| {
+        levenshtein(a.file_name().to_str().unwrap_or(""), search_input).cmp(&levenshtein(
+            b.file_name().to_str().unwrap_or(""),
+            search_input,
+        ))
+    });
+
+    return vec
+        .iter()
+        .take(8)
         .map(|entry| DesktopEntry::from_file(entry.path()))
         .filter_map(|desktop_entry| desktop_entry.ok())
         .collect();
