@@ -15,13 +15,14 @@ function App() {
   }
 
   return (
-    <div>
+    <div className="gradient">
       <input
         type="text"
-        className="w-full"
+        className="h-8 w-full p-2"
+        placeholder="Search for apps or commands..."
         onInput={(event) => search(event.currentTarget.value)}
       />
-      <ul>
+      <ul className="mt-2 px-2">
         {apps.map((app) => (
           <li key={app.name}>{app.name}</li>
         ))}
