@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
-import "./App.css";
 
 type DesktopEntry = {
   name: string;
@@ -16,9 +15,10 @@ function App() {
   }
 
   return (
-    <div className="container">
+    <div>
       <input
         type="text"
+        className="w-full"
         onInput={(event) => search(event.currentTarget.value)}
       />
       <ul>
