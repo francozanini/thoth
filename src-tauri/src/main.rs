@@ -4,15 +4,16 @@
 extern crate levenshtein;
 
 use std::error::Error;
-use std::ffi::{OsStr, OsString};
 use std::fmt::{Debug, Display, Formatter};
-use std::fs::{DirEntry, File};
+use std::fs::DirEntry;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::{fs, io};
 
 use freedesktop_entry_parser::parse_entry;
 use levenshtein::levenshtein;
+use tauri::Manager;
+
+use tauri_plugin_positioner::WindowExt;
 
 use crate::ParseEntryError::{IOError, MissingAttributes, WrongExtension};
 
@@ -89,6 +90,13 @@ fn all_apps(search_input: &str) -> Vec<DesktopEntry> {
 
 fn main() {
     tauri::Builder::default()
+        .setup(|app| {
+            let window = app.get_window("main").unwrap();
+            window
+                .move_window(tauri_plugin_positioner::Position::Center)
+                .expect("Error positioning window");
+            return Ok(());
+        })
         .invoke_handler(tauri::generate_handler![all_apps])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
