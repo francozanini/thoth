@@ -7,33 +7,43 @@ type DesktopEntry = {
   exec: string;
 };
 
+function Runnables({ runnables }: { runnables: ReadonlyArray<DesktopEntry> }) {
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  return (
+    <ul className="mt-2 px-2">
+      {runnables.map((app, index) => (
+        <li
+          className={
+            "cursor-pointer hover:bg-gray-400" +
+            (index === selectedIndex ? "bg-gray-500" : "")
+          }
+          key={app.name}
+        >
+          <button onClick={() => setSelectedIndex(index)} type="button">
+            {app.name}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function App() {
-  const [apps, setApps] = useState<ReadonlyArray<DesktopEntry>>([]);
+  const [runnables, setRunnables] = useState<ReadonlyArray<DesktopEntry>>([]);
 
   async function search(searchInput: string) {
-    setApps(await invoke("all_apps", { searchInput }));
+    setRunnables(await invoke("all_apps", { searchInput }));
   }
 
   return (
-    <div className="bg-gray-200 font-mono">
+    <div className="rounded-2xl bg-gray-200 font-mono">
       <input
         type="text"
-        className="h-10 w-full border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
+        className="h-10 w-full rounded-t-2xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
         placeholder="Search for apps or commands..."
         onInput={(event) => search(event.currentTarget.value)}
       />
-      <ul className="mt-2 px-2">
-        {apps.map((app) => (
-          <li className="cursor-pointer hover:bg-gray-400" key={app.name}>
-            <button
-              type="button"
-              className="focus:bg-gray-400 focus:outline-none"
-            >
-              {app.name}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <Runnables runnables={runnables} />
     </div>
   );
 }
