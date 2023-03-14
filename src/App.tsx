@@ -24,7 +24,9 @@ function App() {
       />
       <ul className="mt-2 px-2">
         {apps.map((app) => (
-          <li key={app.name}>{app.name}</li>
+          <li className="cursor-pointer hover:bg-gray-500" key={app.name}>
+            {app.name}
+          </li>
         ))}
       </ul>
     </div>
