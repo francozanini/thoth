@@ -41,9 +41,9 @@
         "fullscreen": false,
         "resizable": false,
         "width": 600,
-        "height": 20,
         "hiddenTitle": true,
-        "decorations": false
+        "decorations": false,
+        "transparent": true
       }
     ]
   }
