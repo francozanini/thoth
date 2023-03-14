@@ -3,7 +3,9 @@
 
 extern crate levenshtein;
 
+use std::cmp::Ordering;
 use std::error::Error;
+use std::ffi::OsString;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::DirEntry;
 use std::path::PathBuf;
@@ -12,14 +14,17 @@ use std::{fs, io};
 use freedesktop_entry_parser::parse_entry;
 use levenshtein::levenshtein;
 use tauri::Manager;
-
 use tauri_plugin_positioner::WindowExt;
+
+use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::FuzzyMatcher;
 
 use crate::ParseEntryError::{IOError, MissingAttributes, WrongExtension};
 
 #[derive(serde::Serialize)]
 struct DesktopEntry {
     name: String,
+    file_name: String,
     icon: String,
     exec: String,
 }
@@ -44,6 +49,9 @@ impl DesktopEntry {
         if !path.extension().map_or(false, |ext| ext == "desktop") {
             return Err(WrongExtension);
         }
+        let file_name = path.file_name().map_or("".to_string(), |os_string| {
+            os_string.to_str().unwrap().to_string()
+        });
 
         let entry = parse_entry(path).map_err(|err| IOError(err))?;
 
@@ -54,6 +62,7 @@ impl DesktopEntry {
 
         return Ok(DesktopEntry {
             name: desktop_section.attr("Name").unwrap().to_string(),
+            file_name,
             icon: desktop_section
                 .attr("Icon")
                 .or_else(|| Some("No icon"))
@@ -63,25 +72,66 @@ impl DesktopEntry {
         });
     }
 }
+fn levenshtein_compare(distance_to: &&str, a: &DirEntry, b: &&DirEntry) -> Ordering {
+    return levenshtein(
+        a.file_name().to_str().unwrap_or("").to_lowercase().as_str(),
+        distance_to,
+    )
+    .cmp(&levenshtein(
+        b.file_name().to_str().unwrap_or("").to_lowercase().as_str(),
+        distance_to,
+    ));
+}
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn all_apps(search_input: &str) -> Vec<DesktopEntry> {
+    if search_input.is_empty() {
+        return Vec::new();
+    }
+
     let dir = fs::read_dir("/usr/share/applications").expect("desktop apps are readable");
     let mut entries = dir
         .filter_map(|result| result.ok())
         .filter(|entry| entry.file_type().map_or(false, |ft| ft.is_file()))
         .collect::<Vec<DirEntry>>();
 
-    entries.sort_by(|a, b| {
-        levenshtein(a.file_name().to_str().unwrap_or(""), search_input).cmp(&levenshtein(
-            b.file_name().to_str().unwrap_or(""),
-            search_input,
-        ))
+    println!(
+        "before {:?}",
+        entries
+            .iter()
+            .map(|entry| entry.file_name())
+            .take(10)
+            .collect::<Vec<OsString>>()
+    );
+
+    let matcher = SkimMatcherV2::default();
+    entries.sort_by(move |a, b| {
+        matcher
+            .fuzzy_match(a.file_name().to_str().unwrap(), search_input)
+            .unwrap_or(0)
+            .abs()
+            .cmp(
+                &matcher
+                    .fuzzy_match(b.file_name().to_str().unwrap(), search_input)
+                    .unwrap_or(0)
+                    .abs(),
+            )
     });
+
+    println!(
+        "after {:?}",
+        entries
+            .iter()
+            .rev()
+            .take(10)
+            .map(|entry| entry.file_name())
+            .collect::<Vec<OsString>>()
+    );
 
     return entries
         .iter()
+        .rev()
         .take(8)
         .map(|entry| DesktopEntry::from_file(entry.path()))
         .filter_map(|desktop_entry| desktop_entry.ok())

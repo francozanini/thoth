@@ -3,11 +3,12 @@ import { invoke } from "@tauri-apps/api/tauri";
 
 type DesktopEntry = {
   name: string;
+  file_name: string;
   icon: string;
   exec: string;
 };
 
-function Runnables({ runnables }: { runnables: ReadonlyArray<DesktopEntry> }) {
+function Runnables({ runnables }: { runnables: DesktopEntry[] }) {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   return (
     <ul className="mt-2 px-2">
@@ -18,7 +19,7 @@ function Runnables({ runnables }: { runnables: ReadonlyArray<DesktopEntry> }) {
             "cursor-pointer hover:bg-gray-400" +
             (index === selectedIndex ? "bg-gray-500" : "")
           }
-          key={app.name}
+          key={app.file_name}
         >
           <button
             className="w-full text-left focus:bg-gray-500 focus:outline-none"
@@ -33,10 +34,13 @@ function Runnables({ runnables }: { runnables: ReadonlyArray<DesktopEntry> }) {
 }
 
 function App() {
-  const [runnables, setRunnables] = useState<ReadonlyArray<DesktopEntry>>([]);
+  const [runnables, setRunnables] = useState<DesktopEntry[]>([]);
 
   async function search(searchInput: string) {
-    setRunnables(await invoke("all_apps", { searchInput }));
+    const retrieved = await invoke<DesktopEntry[]>("all_apps", {
+      searchInput,
+    });
+    setRunnables(retrieved);
   }
 
   return (
@@ -46,7 +50,7 @@ function App() {
         type="text"
         className="h-10 w-full rounded-t-2xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
         placeholder="Search for apps or commands..."
-        onInput={(event) => search(event.currentTarget.value)}
+        onChange={(event) => search(event.target.value)}
       />
       <Runnables runnables={runnables} />
     </div>
