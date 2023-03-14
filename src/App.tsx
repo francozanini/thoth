@@ -15,10 +15,10 @@ function App() {
   }
 
   return (
-    <div className="gradient">
+    <div className="bg-gray-200 font-mono">
       <input
         type="text"
-        className="h-8 w-full p-2"
+        className="h-8 w-full border-b-2 border-solid border-gray-300 bg-gray-200 p-2 focus:outline-none"
         placeholder="Search for apps or commands..."
         onInput={(event) => search(event.currentTarget.value)}
       />
