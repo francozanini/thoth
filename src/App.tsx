@@ -24,8 +24,13 @@ function App() {
       />
       <ul className="mt-2 px-2">
         {apps.map((app) => (
-          <li className="cursor-pointer hover:bg-gray-500" key={app.name}>
-            {app.name}
+          <li className="cursor-pointer hover:bg-gray-400" key={app.name}>
+            <button
+              type="button"
+              className="focus:bg-gray-400 focus:outline-none"
+            >
+              {app.name}
+            </button>
           </li>
         ))}
       </ul>
