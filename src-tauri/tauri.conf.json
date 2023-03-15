@@ -16,6 +16,9 @@
       "shell": {
         "all": false,
         "open": true
+      },
+      "window": {
+        "setSize": true
       }
     },
     "bundle": {
@@ -41,7 +44,9 @@
         "fullscreen": false,
         "resizable": false,
         "width": 600,
-        "height": 240,
+        "skipTaskbar": false,
+        "minHeight": 40,
+        "height": 40,
         "hiddenTitle": true,
         "decorations": false,
         "transparent": true

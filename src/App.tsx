@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
+import { appWindow, LogicalSize } from "@tauri-apps/api/window";
 
 type DesktopEntry = {
   name: string;
@@ -36,6 +37,17 @@ function Runnables({ runnables }: { runnables: DesktopEntry[] }) {
 function App() {
   const [runnables, setRunnables] = useState<DesktopEntry[]>([]);
 
+  useEffect(() => {
+    async function resizeWindow() {
+      const height = document.getElementById("container")?.clientHeight ?? 0;
+      await appWindow.setSize(new LogicalSize(600, height));
+      if (runnables.length > 0 && runnables[0].name !== "") {
+        //TODO: magic that focuses on first search Resultasd
+      }
+    }
+    resizeWindow().catch(console.error);
+  }, [runnables]);
+
   async function search(searchInput: string) {
     const retrieved = await invoke<DesktopEntry[]>("all_apps", {
       searchInput,
@@ -44,7 +56,7 @@ function App() {
   }
 
   return (
-    <div className="rounded-2xl bg-gray-200 font-mono">
+    <div id="container" className="rounded-2xl bg-gray-200 font-mono">
       <input
         autoFocus
         type="text"
