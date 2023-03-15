@@ -38,13 +38,30 @@ function Runnables({ runnables }: { runnables: DesktopEntry[] }) {
   );
 }
 
+function cn(...classes: (string | boolean)[]): string {
+  return classes.filter(Boolean).join(", ");
+}
+
+function Footer({ searchIsDone }: { searchIsDone: boolean }) {
+  return (
+    <footer
+      className={cn(
+        "rounded-b-xl border-solid border-gray-300 text-center text-sm",
+        searchIsDone && "border-t-2"
+      )}
+    >
+      thoth.app
+    </footer>
+  );
+}
+
 function App() {
   const [runnables, setRunnables] = useState<DesktopEntry[]>([]);
 
   useEffect(() => {
     async function resizeWindow() {
       const height = document.getElementById("container")?.clientHeight ?? 0;
-      await appWindow.setSize(new LogicalSize(600, height));
+      await appWindow.setSize(new LogicalSize(750, height));
       if (runnables.length > 0 && runnables[0].name !== "") {
         //TODO: magic that focuses on first search Resultasd
       }
@@ -60,15 +77,16 @@ function App() {
   }
 
   return (
-    <div id="container" className="h-full rounded-2xl bg-gray-200 font-mono">
+    <div id="container" className="h-full rounded-xl bg-gray-200 font-mono">
       <input
         autoFocus
         type="text"
-        className="w-full rounded-t-2xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
+        className="w-full rounded-t-xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
         placeholder="Search for apps or commands..."
         onChange={(event) => search(event.target.value)}
       />
       <Runnables runnables={runnables} />
+      <Footer searchIsDone={runnables.length > 0}></Footer>
     </div>
   );
 }
