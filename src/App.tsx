@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { appWindow, LogicalSize } from "@tauri-apps/api/window";
 
@@ -9,8 +9,21 @@ type DesktopEntry = {
   exec: string;
 };
 
+function useAutoWindowResizing(dependencies: React.DependencyList) {
+  useEffect(() => {
+    async function resizeWindow() {
+      const height = document.getElementById("container")?.clientHeight ?? 0;
+      await appWindow.setSize(new LogicalSize(750, height));
+    }
+
+    resizeWindow().catch(console.error);
+  }, [dependencies]);
+}
+
 function Runnables({ runnables }: { runnables: DesktopEntry[] }) {
-  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  useAutoWindowResizing(runnables);
+
   if (!runnables.length) {
     return null;
   }
@@ -20,14 +33,15 @@ function Runnables({ runnables }: { runnables: DesktopEntry[] }) {
       {runnables.map((app, index) => (
         <li
           onClick={() => setSelectedIndex(index)}
-          className={
-            "cursor-pointer hover:bg-gray-400" +
-            (index === selectedIndex ? "bg-gray-500" : "")
-          }
+          className={cn(
+            "cursor-pointer",
+            index === selectedIndex && "bg-gray-400"
+          )}
           key={app.file_name}
         >
           <button
-            className="w-full text-left focus:bg-gray-500 focus:outline-none"
+            id={index === 0 ? "first-search-result" : ""}
+            className="w-full text-left focus:bg-gray-400 focus:outline-none"
             type="button"
           >
             {app.name}
@@ -79,17 +93,6 @@ function SearchBar({
 
 function App() {
   const [runnables, setRunnables] = useState<DesktopEntry[]>([]);
-
-  useEffect(() => {
-    async function resizeWindow() {
-      const height = document.getElementById("container")?.clientHeight ?? 0;
-      await appWindow.setSize(new LogicalSize(750, height));
-      if (runnables.length > 0 && runnables[0].name !== "") {
-        //TODO: magic that focuses on first search Resultasd
-      }
-    }
-    resizeWindow().catch(console.error);
-  }, [runnables]);
 
   return (
     <div id="container" className="h-full rounded-xl bg-gray-200 font-mono">
