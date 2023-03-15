@@ -55,6 +55,28 @@ function Footer({ searchIsDone }: { searchIsDone: boolean }) {
   );
 }
 
+function SearchBar({
+  onSearch,
+}: {
+  onSearch: (result: DesktopEntry[]) => void;
+}) {
+  async function search(searchInput: string) {
+    const retrieved = await invoke<DesktopEntry[]>("all_apps", {
+      searchInput,
+    });
+    onSearch(retrieved);
+  }
+  return (
+    <input
+      autoFocus
+      type="text"
+      className="w-full rounded-t-xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
+      placeholder="Search for apps or commands..."
+      onChange={(event) => search(event.target.value)}
+    />
+  );
+}
+
 function App() {
   const [runnables, setRunnables] = useState<DesktopEntry[]>([]);
 
@@ -69,22 +91,9 @@ function App() {
     resizeWindow().catch(console.error);
   }, [runnables]);
 
-  async function search(searchInput: string) {
-    const retrieved = await invoke<DesktopEntry[]>("all_apps", {
-      searchInput,
-    });
-    setRunnables(retrieved);
-  }
-
   return (
     <div id="container" className="h-full rounded-xl bg-gray-200 font-mono">
-      <input
-        autoFocus
-        type="text"
-        className="w-full rounded-t-xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
-        placeholder="Search for apps or commands..."
-        onChange={(event) => search(event.target.value)}
-      />
+      <SearchBar onSearch={setRunnables} />
       <Runnables runnables={runnables} />
       <Footer searchIsDone={runnables.length > 0}></Footer>
     </div>
