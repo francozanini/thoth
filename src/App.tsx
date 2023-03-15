@@ -11,6 +11,10 @@ type DesktopEntry = {
 
 function Runnables({ runnables }: { runnables: DesktopEntry[] }) {
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  if (!runnables.length) {
+    return null;
+  }
+
   return (
     <ul className="mt-2 px-2">
       {runnables.map((app, index) => (
@@ -56,11 +60,11 @@ function App() {
   }
 
   return (
-    <div id="container" className="rounded-2xl bg-gray-200 font-mono">
+    <div id="container" className="h-full rounded-2xl bg-gray-200 font-mono">
       <input
         autoFocus
         type="text"
-        className="h-10 w-full rounded-t-2xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
+        className="w-full rounded-t-2xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
         placeholder="Search for apps or commands..."
         onChange={(event) => search(event.target.value)}
       />
