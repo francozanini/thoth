@@ -12,12 +12,11 @@ use std::path::PathBuf;
 use std::{fs, io};
 
 use freedesktop_entry_parser::parse_entry;
+use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::FuzzyMatcher;
 use levenshtein::levenshtein;
 use tauri::Manager;
 use tauri_plugin_positioner::WindowExt;
-
-use fuzzy_matcher::skim::SkimMatcherV2;
-use fuzzy_matcher::FuzzyMatcher;
 
 use crate::ParseEntryError::{IOError, MissingAttributes, WrongExtension};
 
@@ -105,19 +104,7 @@ fn all_apps(search_input: &str) -> Vec<DesktopEntry> {
             .collect::<Vec<OsString>>()
     );
 
-    let matcher = SkimMatcherV2::default();
-    entries.sort_by(move |a, b| {
-        matcher
-            .fuzzy_match(a.file_name().to_str().unwrap(), search_input)
-            .unwrap_or(0)
-            .abs()
-            .cmp(
-                &matcher
-                    .fuzzy_match(b.file_name().to_str().unwrap(), search_input)
-                    .unwrap_or(0)
-                    .abs(),
-            )
-    });
+    sort_by_match(&search_input, &mut entries);
 
     println!(
         "after {:?}",
@@ -136,6 +123,22 @@ fn all_apps(search_input: &str) -> Vec<DesktopEntry> {
         .map(|entry| DesktopEntry::from_file(entry.path()))
         .filter_map(|desktop_entry| desktop_entry.ok())
         .collect();
+}
+
+fn sort_by_match(search_input: &&str, entries: &mut Vec<DirEntry>) {
+    let matcher = SkimMatcherV2::default();
+    entries.sort_by(move |a, b| {
+        matcher
+            .fuzzy_match(a.file_name().to_str().unwrap(), search_input)
+            .unwrap_or(0)
+            .abs()
+            .cmp(
+                &matcher
+                    .fuzzy_match(b.file_name().to_str().unwrap(), search_input)
+                    .unwrap_or(0)
+                    .abs(),
+            )
+    });
 }
 
 fn main() {
