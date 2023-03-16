@@ -28,6 +28,11 @@ function Runnables({ runnables }: { runnables: DesktopEntry[] }) {
     return null;
   }
 
+  async function runCommand(command: string) {
+    console.log(command);
+    await invoke("spawn_process", { path: command });
+  }
+
   return (
     <ul className="mt-2 px-2">
       {runnables.map((app, index) => (
@@ -43,6 +48,7 @@ function Runnables({ runnables }: { runnables: DesktopEntry[] }) {
             id={index === 0 ? "first-search-result" : ""}
             className="w-full text-left focus:bg-gray-400 focus:outline-none"
             type="button"
+            onClick={() => runCommand(app.exec)}
           >
             {app.name}
           </button>

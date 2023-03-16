@@ -3,6 +3,7 @@
 
 extern crate levenshtein;
 
+use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::error::Error;
 use std::ffi::OsString;
@@ -15,6 +16,7 @@ use freedesktop_entry_parser::parse_entry;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use levenshtein::levenshtein;
+use tauri::api::process::Command;
 use tauri::Manager;
 use tauri_plugin_positioner::WindowExt;
 
@@ -81,8 +83,18 @@ fn levenshtein_compare(distance_to: &&str, a: &DirEntry, b: &&DirEntry) -> Order
         distance_to,
     ));
 }
+#[tauri::command]
+fn spawn_process(path: &str) {
+    let result = Command::new(path).spawn();
 
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
+    match result {
+        Ok(whatever) => {}
+        e => {
+            println!("{:?}", e)
+        }
+    }
+}
+
 #[tauri::command]
 fn all_apps(search_input: &str) -> Vec<DesktopEntry> {
     if search_input.is_empty() {
@@ -95,26 +107,7 @@ fn all_apps(search_input: &str) -> Vec<DesktopEntry> {
         .filter(|entry| entry.file_type().map_or(false, |ft| ft.is_file()))
         .collect::<Vec<DirEntry>>();
 
-    println!(
-        "before {:?}",
-        entries
-            .iter()
-            .map(|entry| entry.file_name())
-            .take(10)
-            .collect::<Vec<OsString>>()
-    );
-
     sort_by_match(&search_input, &mut entries);
-
-    println!(
-        "after {:?}",
-        entries
-            .iter()
-            .rev()
-            .take(10)
-            .map(|entry| entry.file_name())
-            .collect::<Vec<OsString>>()
-    );
 
     return entries
         .iter()
@@ -142,6 +135,7 @@ fn sort_by_match(search_input: &&str, entries: &mut Vec<DirEntry>) {
 }
 
 fn main() {
+    fix_path_env::fix();
     tauri::Builder::default()
         .setup(|app| {
             let window = app.get_window("main").unwrap();
@@ -150,7 +144,7 @@ fn main() {
                 .expect("Error positioning window");
             return Ok(());
         })
-        .invoke_handler(tauri::generate_handler![all_apps])
+        .invoke_handler(tauri::generate_handler![all_apps, spawn_process])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
