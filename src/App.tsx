@@ -117,7 +117,13 @@ function App() {
   return (
     <div id="container" className="h-full rounded-xl bg-gray-200 font-mono">
       <SearchBar onSearch={setRunnables} />
-      <Runnables runnables={runnables} onCommand={setFooterMessage} />
+      <Runnables
+        runnables={runnables}
+        onCommand={(message) => {
+          setFooterMessage(message);
+          setRunnables([]);
+        }}
+      />
       <Footer
         message={footerMessage}
         searchIsDone={runnables.length > 0}
