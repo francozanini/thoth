@@ -20,7 +20,13 @@ function useAutoWindowResizing(dependencies: React.DependencyList) {
   }, [dependencies]);
 }
 
-function Runnables({ runnables }: { runnables: DesktopEntry[] }) {
+function Runnables({
+  runnables,
+  onCommand,
+}: {
+  runnables: DesktopEntry[];
+  onCommand: (message: string) => void;
+}) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   useAutoWindowResizing(runnables);
 
@@ -30,7 +36,8 @@ function Runnables({ runnables }: { runnables: DesktopEntry[] }) {
 
   async function runCommand(command: string) {
     console.log(command);
-    await invoke("spawn_process", { path: command });
+    const wasSuccessful = await invoke("spawn_process", { path: command });
+    onCommand(wasSuccessful ? "thot.app" : "Error running command");
   }
 
   return (
@@ -62,7 +69,13 @@ function cn(...classes: (string | boolean)[]): string {
   return classes.filter(Boolean).join(", ");
 }
 
-function Footer({ searchIsDone }: { searchIsDone: boolean }) {
+function Footer({
+  searchIsDone,
+  message = "thoth.app",
+}: {
+  searchIsDone: boolean;
+  message: string;
+}) {
   return (
     <footer
       className={cn(
@@ -70,7 +83,7 @@ function Footer({ searchIsDone }: { searchIsDone: boolean }) {
         searchIsDone && "border-t-2"
       )}
     >
-      thoth.app
+      {message}
     </footer>
   );
 }
@@ -99,12 +112,16 @@ function SearchBar({
 
 function App() {
   const [runnables, setRunnables] = useState<DesktopEntry[]>([]);
+  const [footerMessage, setFooterMessage] = useState<string>("thoth.app");
 
   return (
     <div id="container" className="h-full rounded-xl bg-gray-200 font-mono">
       <SearchBar onSearch={setRunnables} />
-      <Runnables runnables={runnables} />
-      <Footer searchIsDone={runnables.length > 0}></Footer>
+      <Runnables runnables={runnables} onCommand={setFooterMessage} />
+      <Footer
+        message={footerMessage}
+        searchIsDone={runnables.length > 0}
+      ></Footer>
     </div>
   );
 }

@@ -84,14 +84,20 @@ fn levenshtein_compare(distance_to: &&str, a: &DirEntry, b: &&DirEntry) -> Order
     ));
 }
 #[tauri::command]
-fn spawn_process(path: &str) {
+fn spawn_process(path: &str) -> boolean {
     let args: Vec<&str> = path.split(" ").collect();
     let result = Command::new(args[0]).args(&args[1..]).spawn();
 
-    match result {
-        Ok(whatever) => println!("{:?}", whatever),
-        e => println!("{:?}", e),
-    }
+    return match result {
+        Ok(ok) => {
+            println!("{:?}", ok);
+            return true;
+        }
+        e => {
+            println!("{:?}", e);
+            return false;
+        }
+    };
 }
 
 #[tauri::command]
