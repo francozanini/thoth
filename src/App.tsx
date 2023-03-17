@@ -35,8 +35,7 @@ function Runnables({
   }
 
   async function runCommand(command: string) {
-    console.log(command);
-    const wasSuccessful = await invoke("spawn_process", { path: command });
+    const wasSuccessful = await invoke("run", { path: command });
     onCommand(wasSuccessful ? "thot.app" : "Error running command");
   }
 
@@ -94,7 +93,7 @@ function SearchBar({
   onSearch: (result: DesktopEntry[]) => void;
 }) {
   async function search(searchInput: string) {
-    const retrieved = await invoke<DesktopEntry[]>("all_apps", {
+    const retrieved = await invoke<DesktopEntry[]>("search", {
       searchInput,
     });
     onSearch(retrieved);

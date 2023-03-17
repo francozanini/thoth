@@ -3,10 +3,7 @@
 
 extern crate levenshtein;
 
-use std::borrow::Borrow;
-use std::cmp::Ordering;
 use std::error::Error;
-use std::ffi::OsString;
 use std::fmt::{Debug, Display, Formatter};
 use std::fs::DirEntry;
 use std::path::PathBuf;
@@ -15,7 +12,6 @@ use std::{fs, io};
 use freedesktop_entry_parser::parse_entry;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
-use levenshtein::levenshtein;
 use tauri::api::process::Command;
 use tauri::Manager;
 use tauri_plugin_positioner::WindowExt;
@@ -73,18 +69,9 @@ impl DesktopEntry {
         });
     }
 }
-fn levenshtein_compare(distance_to: &&str, a: &DirEntry, b: &&DirEntry) -> Ordering {
-    return levenshtein(
-        a.file_name().to_str().unwrap_or("").to_lowercase().as_str(),
-        distance_to,
-    )
-    .cmp(&levenshtein(
-        b.file_name().to_str().unwrap_or("").to_lowercase().as_str(),
-        distance_to,
-    ));
-}
+
 #[tauri::command]
-fn spawn_process(path: &str) -> bool {
+fn run(path: &str) -> bool {
     let args: Vec<&str> = path.split(" ").collect();
     let result = Command::new(args[0]).args(&args[1..]).spawn();
 
@@ -101,7 +88,7 @@ fn spawn_process(path: &str) -> bool {
 }
 
 #[tauri::command]
-fn all_apps(search_input: &str) -> Vec<DesktopEntry> {
+fn search(search_input: &str) -> Vec<DesktopEntry> {
     if search_input.is_empty() {
         return Vec::new();
     }
@@ -140,7 +127,7 @@ fn sort_by_match(search_input: &&str, entries: &mut Vec<DirEntry>) {
 }
 
 fn main() {
-    fix_path_env::fix();
+    fix_path_env::fix().expect("Can not fix path environments");
     tauri::Builder::default()
         .setup(|app| {
             let window = app.get_window("main").unwrap();
@@ -149,7 +136,7 @@ fn main() {
                 .expect("Error positioning window");
             return Ok(());
         })
-        .invoke_handler(tauri::generate_handler![all_apps, spawn_process])
+        .invoke_handler(tauri::generate_handler![search, run])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
