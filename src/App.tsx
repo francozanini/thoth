@@ -84,7 +84,7 @@ function Runnables({
 }
 
 function cn(...classes: (string | boolean)[]): string {
-  return classes.filter(Boolean).join(", ");
+  return classes.filter(Boolean).join(" ");
 }
 
 function Footer({
