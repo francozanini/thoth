@@ -45,6 +45,10 @@ async function runCommand(
   afterRun: (message: string) => void
 ) {
   const wasSuccessful = await invoke("run", { path: command });
+  const inputElement: HTMLInputElement = document.getElementById(
+    "search-bar"
+  )! as HTMLInputElement;
+  inputElement.value = "";
   afterRun(wasSuccessful ? "thoth.app" : "Error running command");
 }
 
@@ -122,6 +126,7 @@ function SearchBar({
   }
   return (
     <input
+      id="search-bar"
       autoFocus
       type="text"
       className="w-full rounded-t-xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
