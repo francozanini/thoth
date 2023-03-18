@@ -40,7 +40,15 @@ function useListNavigation(listLength: number) {
   return selectedIndex;
 }
 
-function Runnables({
+async function runCommand(
+  command: string,
+  afterRun: (message: string) => void
+) {
+  const wasSuccessful = await invoke("run", { path: command });
+  afterRun(wasSuccessful ? "thoth.app" : "Error running command");
+}
+
+function SearchResults({
   runnables,
   onCommand,
 }: {
@@ -52,11 +60,6 @@ function Runnables({
 
   if (!runnables.length) {
     return null;
-  }
-
-  async function runCommand(command: string) {
-    const wasSuccessful = await invoke("run", { path: command });
-    onCommand(wasSuccessful ? "thoth.app" : "Error running command");
   }
 
   return (
@@ -73,7 +76,7 @@ function Runnables({
             id={index === 0 ? "first-search-result" : ""}
             className="w-full text-left focus:bg-gray-400 focus:outline-none"
             type="button"
-            onClick={() => runCommand(app.exec)}
+            onClick={() => runCommand(app.exec, onCommand)}
           >
             {app.name}
           </button>
@@ -135,7 +138,7 @@ function App() {
   return (
     <div id="container" className="h-full rounded-xl bg-gray-200 font-mono">
       <SearchBar onSearch={setRunnables} />
-      <Runnables
+      <SearchResults
         runnables={runnables}
         onCommand={(message) => {
           setFooterMessage(message);
