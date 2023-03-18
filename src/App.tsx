@@ -20,6 +20,26 @@ function useAutoWindowResizing(dependencies: React.DependencyList) {
   }, [dependencies]);
 }
 
+function useListNavigation(listLength: number) {
+  const [selectedIndex, moveIndexTo] = useState(0);
+  const keyboardHandler = (event: KeyboardEvent) => {
+    if (event?.code === "ArrowDown") {
+      moveIndexTo(Math.min(selectedIndex + 1, listLength - 1));
+    }
+
+    if (event?.code === "ArrowUp") {
+      moveIndexTo(Math.max(selectedIndex - 1, 0));
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", keyboardHandler);
+    return () => window.removeEventListener("keydown", keyboardHandler);
+  });
+
+  return selectedIndex;
+}
+
 function Runnables({
   runnables,
   onCommand,
@@ -27,8 +47,8 @@ function Runnables({
   runnables: DesktopEntry[];
   onCommand: (message: string) => void;
 }) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
   useAutoWindowResizing(runnables);
+  const selectedIndex = useListNavigation(runnables.length);
 
   if (!runnables.length) {
     return null;
@@ -36,14 +56,13 @@ function Runnables({
 
   async function runCommand(command: string) {
     const wasSuccessful = await invoke("run", { path: command });
-    onCommand(wasSuccessful ? "thot.app" : "Error running command");
+    onCommand(wasSuccessful ? "thoth.app" : "Error running command");
   }
 
   return (
     <ul className="mt-2 px-2">
       {runnables.map((app, index) => (
         <li
-          onClick={() => setSelectedIndex(index)}
           className={cn(
             "cursor-pointer",
             index === selectedIndex && "bg-gray-400"
