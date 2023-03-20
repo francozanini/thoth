@@ -140,15 +140,17 @@ function SearchBar({
   };
 
   return (
-    <input
-      id="search-bar"
-      autoFocus
-      type="text"
-      className="w-full rounded-t-xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
-      placeholder="Search for apps or commands..."
-      onKeyDown={preventArrowMovement}
-      onChange={(event) => search(event.target.value)}
-    />
+    <form>
+      <input
+        id="search-bar"
+        autoFocus
+        type="text"
+        className="w-full rounded-t-xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
+        placeholder="Search for apps or commands..."
+        onKeyDown={preventArrowMovement}
+        onChange={(event) => search(event.target.value)}
+      />
+    </form>
   );
 }
 
