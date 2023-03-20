@@ -23,7 +23,8 @@ function useAutoWindowResizing(dependencies: React.DependencyList) {
 function useListNavigation(listLength: number) {
   const [selectedIndex, moveIndexTo] = useState(0);
   const keyboardHandler = (event: KeyboardEvent) => {
-    if (event?.code === "ArrowDown") {
+    if (event?.code === "ArrowDown" || event.code === "Tab") {
+      event.preventDefault();
       if (selectedIndex === listLength - 1) {
         moveIndexTo(0);
       } else {
