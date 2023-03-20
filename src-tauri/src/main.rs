@@ -89,7 +89,7 @@ fn run(path: &str) -> bool {
 
 #[tauri::command]
 fn search(search_input: &str) -> Vec<DesktopEntry> {
-    if search_input.is_empty() {
+    if search_input.trim().is_empty() {
         return Vec::new();
     }
 
@@ -99,7 +99,7 @@ fn search(search_input: &str) -> Vec<DesktopEntry> {
         .filter(|entry| entry.file_type().map_or(false, |ft| ft.is_file()))
         .collect::<Vec<DirEntry>>();
 
-    sort_by_match(&search_input, &mut entries);
+    sort_by_match(&search_input.trim(), &mut entries);
 
     return entries
         .iter()
