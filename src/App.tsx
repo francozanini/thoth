@@ -17,7 +17,7 @@ function useAutoWindowResizing(dependencies: React.DependencyList) {
     }
 
     resizeWindow().catch(console.error);
-  }, [dependencies]);
+  }, dependencies);
 }
 
 function useListNavigation(listLength: number) {
@@ -67,7 +67,6 @@ function SearchResults({
   runnables: DesktopEntry[];
   onCommand: (message: string) => void;
 }) {
-  useAutoWindowResizing(runnables);
   const selectedIndex = useListNavigation(runnables.length);
 
   if (!runnables.length) {
@@ -157,6 +156,7 @@ function SearchBar({
 function App() {
   const [runnables, setRunnables] = useState<DesktopEntry[]>([]);
   const [footerMessage, setFooterMessage] = useState<string>("thoth.app");
+  useAutoWindowResizing([runnables]);
 
   return (
     <div id="container" className="h-full rounded-xl bg-gray-200 font-mono">
