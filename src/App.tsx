@@ -102,17 +102,17 @@ function cn(...classes: (string | boolean)[]): string {
 }
 
 function Footer({
-  searchIsDone,
+  includeBorder,
   message = "thoth.app",
 }: {
-  searchIsDone: boolean;
+  includeBorder: boolean;
   message: string;
 }) {
   return (
     <footer
       className={cn(
         "rounded-b-xl border-solid border-gray-300 text-center text-sm",
-        searchIsDone && "border-t-2"
+        includeBorder && "border-t-2"
       )}
     >
       {message}
@@ -170,7 +170,7 @@ function App() {
       />
       <Footer
         message={footerMessage}
-        searchIsDone={runnables.length > 0}
+        includeBorder={runnables.length > 0}
       ></Footer>
     </div>
   );
