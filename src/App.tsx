@@ -69,6 +69,17 @@ function SearchResults({
   onCommand: (message: string) => void;
 }) {
   const selectedIndex = useListNavigation(runnables.length);
+  useEffect(() => {
+    const handleEnterKey = (event: KeyboardEvent) => {
+      if (event.code === "Enter") {
+        runCommand(runnables[selectedIndex].exec, onCommand).catch(
+          console.error
+        );
+      }
+    };
+    document.addEventListener("keydown", handleEnterKey);
+    return () => document.removeEventListener("keydown", handleEnterKey);
+  });
 
   if (!runnables.length) {
     return null;
