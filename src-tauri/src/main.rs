@@ -13,7 +13,8 @@ use freedesktop_entry_parser::parse_entry;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use tauri::api::process::Command;
-use tauri::Manager;
+use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem};
+use tauri::{Manager, SystemTray};
 use tauri_plugin_positioner::WindowExt;
 
 use crate::ParseEntryError::{IOError, MissingAttributes, WrongExtension};
@@ -127,6 +128,14 @@ fn sort_by_match(search_input: &&str, entries: &mut Vec<DirEntry>) {
 }
 
 fn main() {
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    let hide = CustomMenuItem::new("hide".to_string(), "Hide");
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(quit)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(hide);
+    let tray = SystemTray::new().with_menu(tray_menu);
+
     fix_path_env::fix().expect("Can not fix path environments");
     tauri::Builder::default()
         .setup(|app| {
@@ -135,6 +144,14 @@ fn main() {
                 .move_window(tauri_plugin_positioner::Position::Center)
                 .expect("Error positioning window");
             return Ok(());
+        })
+        .system_tray(tray)
+        .on_window_event(|event| match event.event() {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                event.window().hide().unwrap();
+                api.prevent_close();
+            }
+            _ => {}
         })
         .invoke_handler(tauri::generate_handler![search, run])
         .run(tauri::generate_context!())

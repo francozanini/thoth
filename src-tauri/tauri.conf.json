@@ -11,6 +11,10 @@
     "version": "0.0.0"
   },
   "tauri": {
+    "systemTray": {
+      "iconPath": "icons/32x32.png",
+      "iconAsTemplate": true
+    },
     "allowlist": {
       "all": false,
       "shell": {
@@ -18,7 +22,13 @@
         "open": true
       },
       "window": {
-        "setSize": true
+        "hide": true,
+        "show": true,
+        "setFocus": true,
+        "setSize": true,
+        "setAlwaysOnTop": true,
+        "setSkipTaskbar": true,
+        "center": true
       }
     },
     "bundle": {
@@ -44,7 +54,7 @@
         "fullscreen": false,
         "resizable": false,
         "width": 750,
-        "skipTaskbar": false,
+        "skipTaskbar": true,
         "minHeight": 40,
         "height": 40,
         "hiddenTitle": true,

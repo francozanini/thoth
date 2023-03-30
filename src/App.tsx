@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { appWindow, LogicalSize } from "@tauri-apps/api/window";
 
@@ -10,7 +10,7 @@ type DesktopEntry = {
 };
 
 function useAutoWindowResizing(dependencies: React.DependencyList) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     async function resizeWindow() {
       const height = document.getElementById("container")?.clientHeight ?? 0;
       await appWindow.setSize(new LogicalSize(750, height));
@@ -58,7 +58,13 @@ async function runCommand(
     "search-bar"
   )! as HTMLInputElement;
   inputElement.value = "";
-  afterRun(wasSuccessful ? "thoth.app" : "Error running command");
+
+  if (wasSuccessful) {
+    afterRun("thoth.app");
+    appWindow.hide();
+  } else {
+    afterRun("Error running command");
+  }
 }
 
 function SearchResults({
