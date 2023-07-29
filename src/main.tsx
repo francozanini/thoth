@@ -11,9 +11,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-document.addEventListener("onblur", async () => await appWindow.hide());
-
-await register("CommandOrControl+Shift+P", async () => {
+await register("Control+Space", async () => {
   if (document.hasFocus()) {
     await appWindow.hide();
   } else {

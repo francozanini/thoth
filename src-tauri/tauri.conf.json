@@ -21,6 +21,9 @@
         "execute": true,
         "open": true
       },
+      "globalShortcut": {
+        "all": true
+      },
       "window": {
         "hide": true,
         "show": true,
@@ -40,7 +43,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tauri.dev",
+      "identifier": "com.thoth.dev",
       "targets": "all"
     },
     "security": {
