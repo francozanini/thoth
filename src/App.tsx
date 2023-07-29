@@ -2,11 +2,11 @@ import React, { useEffect, useLayoutEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { appWindow, LogicalSize } from "@tauri-apps/api/window";
 
-type DesktopEntry = {
+type Runnable = {
   name: string;
-  file_name: string;
-  icon: string;
-  exec: string;
+  file_name?: string;
+  icon?: string;
+  exec?: string;
 };
 
 function useAutoWindowResizing(dependencies: React.DependencyList) {
@@ -61,26 +61,30 @@ async function runCommand(
 
   if (wasSuccessful) {
     afterRun("thoth.app");
-    appWindow.hide();
   } else {
     afterRun("Error running command");
   }
+}
+
+function raise(message: string): never {
+  throw new Error(message);
 }
 
 function SearchResults({
   runnables,
   onCommand,
 }: {
-  runnables: DesktopEntry[];
+  runnables: Runnable[];
   onCommand: (message: string) => void;
 }) {
   const selectedIndex = useListNavigation(runnables.length);
   useEffect(() => {
     const handleEnterKey = (event: KeyboardEvent) => {
       if (event.code === "Enter") {
-        runCommand(runnables[selectedIndex].exec, onCommand).catch(
-          console.error
-        );
+        runCommand(
+          runnables[selectedIndex].exec ?? raise("implement runnable"),
+          onCommand
+        ).catch(console.error);
       }
     };
     document.addEventListener("keydown", handleEnterKey);
@@ -105,7 +109,9 @@ function SearchResults({
             id={index === 0 ? "first-search-result" : ""}
             className="w-full text-left focus:bg-gray-400 focus:outline-none"
             type="button"
-            onClick={() => runCommand(app.exec, onCommand)}
+            onClick={() =>
+              runCommand(app.exec ?? raise("implement runnable"), onCommand)
+            }
           >
             {app.name}
           </button>
@@ -138,13 +144,9 @@ function Footer({
   );
 }
 
-function SearchBar({
-  onSearch,
-}: {
-  onSearch: (result: DesktopEntry[]) => void;
-}) {
+function SearchBar({ onSearch }: { onSearch: (result: Runnable[]) => void }) {
   async function search(searchInput: string) {
-    const retrieved = await invoke<DesktopEntry[]>("search", {
+    const retrieved = await invoke<Runnable[]>("search", {
       searchInput,
     });
     onSearch(retrieved);
@@ -172,7 +174,7 @@ function SearchBar({
 }
 
 function App() {
-  const [runnables, setRunnables] = useState<DesktopEntry[]>([]);
+  const [runnables, setRunnables] = useState<Runnable[]>([]);
   const [footerMessage, setFooterMessage] = useState<string>("thoth.app");
   useAutoWindowResizing([runnables]);
 
@@ -186,10 +188,7 @@ function App() {
           setRunnables([]);
         }}
       />
-      <Footer
-        message={footerMessage}
-        includeBorder={runnables.length > 0}
-      ></Footer>
+      <Footer message={footerMessage} includeBorder={runnables.length > 0} />
     </div>
   );
 }

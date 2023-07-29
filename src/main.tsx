@@ -13,17 +13,17 @@ document.addEventListener("keydown", (event) => {
 
 document.addEventListener("onblur", async () => await appWindow.hide());
 
-await register("CommandOrControl+P", async () => {
+await register("CommandOrControl+Shift+P", async () => {
   if (document.hasFocus()) {
     await appWindow.hide();
   } else {
     await appWindow.show();
     await appWindow.center();
-    await appWindow.maximize();
     await appWindow.setFocus();
     const inputElement: HTMLInputElement = document.getElementById(
       "search-bar"
     )! as HTMLInputElement;
+    inputElement.focus();
   }
 });
 

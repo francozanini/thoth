@@ -3,78 +3,43 @@
 
 extern crate levenshtein;
 
-use std::error::Error;
-use std::fmt::{Debug, Display, Formatter};
-use std::fs::DirEntry;
-use std::path::PathBuf;
-use std::{fs, io};
-
-use freedesktop_entry_parser::parse_entry;
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
-use tauri::api::process::Command;
-use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem};
+use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem, SystemTrayEvent};
 use tauri::{Manager, SystemTray};
 use tauri_plugin_positioner::WindowExt;
+use serde::{Serialize, Deserialize};
+use rust_search::SearchBuilder;
 
-use crate::ParseEntryError::{IOError, MissingAttributes, WrongExtension};
+use std::thread;
+use std::time;
 
-#[derive(serde::Serialize)]
-struct DesktopEntry {
-    name: String,
-    file_name: String,
-    icon: String,
-    exec: String,
+use std::process::Command;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const WINAPI_CREATE_NO_WINDOW: u32 = 0x08000000;
+
+fn command_new(command_name: String) -> Command {
+  let mut command = Command::new(command_name);
+
+  #[cfg(target_os = "windows")]
+  command.creation_flags(WINAPI_CREATE_NO_WINDOW);
+
+  return command;
 }
 
-#[derive(Debug)]
-enum ParseEntryError {
-    WrongExtension,
-    IOError(io::Error),
-    MissingAttributes,
-}
-
-impl Display for ParseEntryError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Can not retrieve this desktop entry")
-    }
-}
-
-impl Error for ParseEntryError {}
-
-impl DesktopEntry {
-    fn from_file(path: PathBuf) -> Result<DesktopEntry, ParseEntryError> {
-        if !path.extension().map_or(false, |ext| ext == "desktop") {
-            return Err(WrongExtension);
-        }
-        let file_name = path.file_name().map_or("".to_string(), |os_string| {
-            os_string.to_str().unwrap().to_string()
-        });
-
-        let entry = parse_entry(path).map_err(|err| IOError(err))?;
-
-        let desktop_section = entry.section("Desktop Entry");
-        if !desktop_section.has_attr("Name") || !desktop_section.has_attr("Exec") {
-            return Err(MissingAttributes);
-        }
-
-        return Ok(DesktopEntry {
-            name: desktop_section.attr("Name").unwrap().to_string(),
-            file_name,
-            icon: desktop_section
-                .attr("Icon")
-                .or_else(|| Some("No icon"))
-                .unwrap()
-                .to_string(),
-            exec: desktop_section.attr("Exec").unwrap().to_string(),
-        });
-    }
-}
 
 #[tauri::command]
 fn run(path: &str) -> bool {
-    let args: Vec<&str> = path.split(" ").collect();
-    let result = Command::new(args[0]).args(&args[1..]).spawn();
+    let result = command_new("cmd.exe".to_string())
+        .arg("/C")
+        .arg("start")
+        .arg("")
+        .arg(path)
+        .spawn();
+
 
     return match result {
         Ok(ok) => {
@@ -88,39 +53,70 @@ fn run(path: &str) -> bool {
     };
 }
 
+
 #[tauri::command]
-fn search(search_input: &str) -> Vec<DesktopEntry> {
-    if search_input.trim().is_empty() {
+fn search(search_input: &str) -> Vec<Runnable> {
+    if search_input.trim().len() < 2 {
         return Vec::new();
     }
 
-    let dir = fs::read_dir("/usr/share/applications").expect("desktop apps are readable");
-    let mut entries = dir
-        .filter_map(|result| result.ok())
-        .filter(|entry| entry.file_type().map_or(false, |ft| ft.is_file()))
-        .collect::<Vec<DirEntry>>();
+    let user_profile = std::env::var("USERPROFILE").expect("USERPROFILE not set").to_string();
+    let app_data = std::env::var("APPDATA").expect("APPDATA not set").to_string();
+    let program_data = std::env::var("ProgramData").expect("Program Data not set").to_string();
 
-    sort_by_match(&search_input.trim(), &mut entries);
+    let dirs_to_look_in = vec![
+        user_profile + "\\Desktop",
+        app_data + "\\Microsoft\\Windows\\Start Menu\\Programs",
+        program_data + "\\Microsoft\\Windows\\Start Menu\\Programs",
+    ];
 
-    return entries
+    let mut apps: Vec<String> = SearchBuilder::default()
+        .location(dirs_to_look_in[0].to_string())
+        .more_locations(dirs_to_look_in.iter().skip(1).map(|s| s.to_string()).collect())
+        .search_input(search_input.to_string())
+        .ext(".lnk|.exe")
+        .ignore_case()
+        .limit(10)
+        .build()
+        .collect();
+
+    sort_by_match(&search_input, &mut apps);
+
+    return apps
         .iter()
         .rev()
-        .take(8)
-        .map(|entry| DesktopEntry::from_file(entry.path()))
-        .filter_map(|desktop_entry| desktop_entry.ok())
+        .take(10)
+        .filter_map(|app| {
+            return Some(Runnable::new(
+                app.to_string(),
+                app.to_string()));
+        })
+
         .collect();
 }
 
-fn sort_by_match(search_input: &&str, entries: &mut Vec<DirEntry>) {
+#[derive(Serialize, Deserialize)]
+struct Runnable {
+    name: String,
+    exec: String,
+}
+
+impl Runnable {
+    fn new(name: String, exec: String) -> Runnable {
+        Runnable { name, exec }
+    }
+}
+
+fn sort_by_match(search_input: &&str, entries: &mut Vec<String>) {
     let matcher = SkimMatcherV2::default();
     entries.sort_by(move |a, b| {
         matcher
-            .fuzzy_match(a.file_name().to_str().unwrap(), search_input)
+            .fuzzy_match(a, search_input)
             .unwrap_or(0)
             .abs()
             .cmp(
                 &matcher
-                    .fuzzy_match(b.file_name().to_str().unwrap(), search_input)
+                    .fuzzy_match(b, search_input)
                     .unwrap_or(0)
                     .abs(),
             )
@@ -130,10 +126,13 @@ fn sort_by_match(search_input: &&str, entries: &mut Vec<DirEntry>) {
 fn main() {
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     let hide = CustomMenuItem::new("hide".to_string(), "Hide");
+    let open = CustomMenuItem::new("open".to_string(), "Open");
     let tray_menu = SystemTrayMenu::new()
         .add_item(quit)
         .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(hide);
+        .add_item(hide)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(open);
     let tray = SystemTray::new().with_menu(tray_menu);
 
     fix_path_env::fix().expect("Can not fix path environments");
@@ -146,6 +145,20 @@ fn main() {
             return Ok(());
         })
         .system_tray(tray)
+        .on_system_tray_event(|app, event| match event {
+            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+                "open" => {
+                    let window = app.get_window("main").unwrap();
+                    window.show().unwrap();
+                    window.center().unwrap();
+                },
+                "quit" => {
+                    std::process::exit(0);
+                },
+                _ => {}
+            },
+            _ => {}
+        })
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 event.window().hide().unwrap();
