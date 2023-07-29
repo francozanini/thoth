@@ -30,6 +30,18 @@ fn command_new(command_name: String) -> Command {
 
 
 #[tauri::command]
+fn hide_window(window: tauri::Window) {
+    window.hide().unwrap();
+}
+
+#[tauri::command]
+fn show_window(window: tauri::Window) {
+    window.show().unwrap();
+    window.center().unwrap();
+    window.set_focus().unwrap();
+}
+
+#[tauri::command]
 fn run(path: &str) -> bool {
     let result = command_new("cmd.exe".to_string())
         .arg("/C")
@@ -136,6 +148,8 @@ fn main() {
             window
                 .move_window(tauri_plugin_positioner::Position::Center)
                 .expect("Error positioning window");
+
+            show_window(window);
             return Ok(());
         })
         .system_tray(tray)
@@ -160,7 +174,7 @@ fn main() {
             }
             _ => {}
         })
-        .invoke_handler(tauri::generate_handler![search, run])
+        .invoke_handler(tauri::generate_handler![search, run, hide_window, show_window])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
