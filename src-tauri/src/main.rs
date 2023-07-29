@@ -11,9 +11,6 @@ use tauri_plugin_positioner::WindowExt;
 use serde::{Serialize, Deserialize};
 use rust_search::SearchBuilder;
 
-use std::thread;
-use std::time;
-
 use std::process::Command;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
