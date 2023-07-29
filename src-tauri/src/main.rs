@@ -11,6 +11,7 @@ use tauri_plugin_positioner::WindowExt;
 use serde::{Serialize, Deserialize};
 use rust_search::SearchBuilder;
 
+use std::path;
 use std::process::Command;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -37,14 +38,13 @@ fn run(path: &str) -> bool {
         .arg(path)
         .spawn();
 
-
     return match result {
         Ok(ok) => {
-            println!("{:?}", ok);
+            println!("Program run {:?}", ok);
             true
         }
         e => {
-            println!("{:?}", e);
+            println!("Program error {:?}", e);
             false
         }
     };
@@ -83,12 +83,9 @@ fn search(search_input: &str) -> Vec<Runnable> {
         .iter()
         .rev()
         .take(10)
-        .filter_map(|app| {
-            return Some(Runnable::new(
-                app.to_string(),
-                app.to_string()));
-        })
-
+        .map(|app| Runnable::new(
+                app.to_string().split(path::MAIN_SEPARATOR).last().unwrap().to_string(),
+                app.to_string()))
         .collect();
 }
 
