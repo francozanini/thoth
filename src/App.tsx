@@ -6,7 +6,7 @@ type Runnable = {
   name: string;
   file_name?: string;
   icon?: string;
-  exec?: string;
+  exec: string;
 };
 
 function useAutoWindowResizing(dependencies: React.DependencyList) {
@@ -78,15 +78,14 @@ function SearchResults({
   onCommand: (message: string) => void;
 }) {
   const selectedIndex = useListNavigation(runnables.length);
+  const handleEnterKey = (event: KeyboardEvent) => {
+    if (event.code === "Enter") {
+      runCommand(runnables[selectedIndex].exec, onCommand);
+      invoke("hide_window", {});
+    }
+  };
+
   useEffect(() => {
-    const handleEnterKey = (event: KeyboardEvent) => {
-      if (event.code === "Enter") {
-        runCommand(
-          runnables[selectedIndex].exec ?? raise("implement runnable"),
-          onCommand
-        ).catch(console.error);
-      }
-    };
     document.addEventListener("keydown", handleEnterKey);
     return () => document.removeEventListener("keydown", handleEnterKey);
   });
@@ -109,9 +108,7 @@ function SearchResults({
             id={index === 0 ? "first-search-result" : ""}
             className="w-full text-left focus:bg-gray-400 focus:outline-none"
             type="button"
-            onClick={() =>
-              runCommand(app.exec ?? raise("implement runnable"), onCommand)
-            }
+            onClick={() => runCommand(app.exec, onCommand)}
           >
             {app.name}
           </button>
@@ -159,17 +156,15 @@ function SearchBar({ onSearch }: { onSearch: (result: Runnable[]) => void }) {
   };
 
   return (
-    <form>
-      <input
-        id="search-bar"
-        autoFocus
-        type="text"
-        className="w-full rounded-t-xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
-        placeholder="Search for apps or commands..."
-        onKeyDown={preventArrowMovement}
-        onChange={(event) => search(event.target.value)}
-      />
-    </form>
+    <input
+      id="search-bar"
+      autoFocus
+      type="text"
+      className="w-full rounded-t-xl border-b-2 border-solid border-gray-300 bg-gray-200 p-2 pt-4 focus:outline-none"
+      placeholder="Search for apps or commands..."
+      onKeyDown={preventArrowMovement}
+      onChange={(event) => search(event.target.value)}
+    />
   );
 }
 

@@ -4,20 +4,19 @@ import App from "./App";
 import "./index.css";
 import { register } from "@tauri-apps/api/globalShortcut";
 import { appWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api";
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
-    appWindow.hide();
+    invoke("hide_window", {});
   }
 });
 
 await register("Control+Space", async () => {
   if (document.hasFocus()) {
-    await appWindow.hide();
+    await invoke("hide_window", {});
   } else {
-    await appWindow.show();
-    await appWindow.center();
-    await appWindow.setFocus();
+    await invoke("show_window", {});
     const inputElement: HTMLInputElement = document.getElementById(
       "search-bar"
     )! as HTMLInputElement;
