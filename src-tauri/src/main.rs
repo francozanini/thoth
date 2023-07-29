@@ -96,7 +96,7 @@ fn search(search_input: &str) -> Vec<Runnable> {
         .rev()
         .take(10)
         .map(|app| Runnable::new(
-                app.to_string().split(path::MAIN_SEPARATOR).last().unwrap().to_string(),
+                app.to_string().split(path::MAIN_SEPARATOR).last().unwrap().replace(".lnk", "").to_string(),
                 app.to_string()))
         .collect();
 }
