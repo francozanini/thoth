@@ -1,25 +1,23 @@
 {
   "root": true,
   "parser": "@typescript-eslint/parser",
-  "extends": [
-    "plugin:prettier/recommended",
-    "plugin:tailwindcss/recommended"
-  ],
+  "extends": ["plugin:prettier/recommended", "plugin:tailwindcss/recommended"],
   "parserOptions": {
     "ecmaVersion": 11,
     "sourceType": "module"
   },
-  "plugins": [
-    "react",
-    "prettier",
-    "import",
-    "@typescript-eslint"
-  ],
+  "plugins": ["react", "prettier", "import", "@typescript-eslint"],
   "rules": {
     "@typescript-eslint/semi": "warn",
     "curly": "warn",
     "eqeqeq": "warn",
     "no-throw-literal": "warn",
-    "semi": "off"
+    "semi": "off",
+    "prettier/prettier": [
+      "error",
+      {
+        "endOfLine": "auto"
+      }
+    ]
   }
 }
