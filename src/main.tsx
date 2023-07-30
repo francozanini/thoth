@@ -12,7 +12,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-await register("Control+Space", async () => {
+await register("Control+Shift+Space", async () => {
   if (document.hasFocus()) {
     await invoke("hide_window", {});
   } else {
