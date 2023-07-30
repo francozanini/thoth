@@ -56,7 +56,6 @@ function App() {
     <main className="dark h-full rounded-xl" id={mainElementId}>
       <Command className="rounded-lg border shadow-md" shouldFilter={false}>
         <CommandInput
-          id="search-bar"
           placeholder="Type a command or search..."
           autoFocus
           value={search}

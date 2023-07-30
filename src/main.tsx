@@ -16,10 +16,6 @@ await register("Control+Shift+Space", async () => {
     await invoke("hide_window", {});
   } else {
     await invoke("show_window", {});
-    const inputElement: HTMLInputElement = document.getElementById(
-      "search-bar"
-    )! as HTMLInputElement;
-    inputElement.focus();
   }
 });
 
