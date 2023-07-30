@@ -5,29 +5,30 @@ extern crate levenshtein;
 
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
-use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem, SystemTrayEvent};
+use tauri::{CustomMenuItem, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
 use tauri::{Manager, SystemTray};
-use tauri_plugin_positioner::WindowExt;
-use serde::{Serialize, Deserialize};
-use rust_search::SearchBuilder;
+use window_shadows::set_shadow;
 
-use std::path;
-use std::process::Command;
+use rust_search::SearchBuilder;
+use serde::{Deserialize, Serialize};
+use tauri_plugin_positioner::WindowExt;
+
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
+use std::path;
+use std::process::Command;
 
 #[cfg(target_os = "windows")]
 const WINAPI_CREATE_NO_WINDOW: u32 = 0x08000000;
 
 fn command_new(command_name: String) -> Command {
-  let mut command = Command::new(command_name);
+    let mut command = Command::new(command_name);
 
-  #[cfg(target_os = "windows")]
-  command.creation_flags(WINAPI_CREATE_NO_WINDOW);
+    #[cfg(target_os = "windows")]
+    command.creation_flags(WINAPI_CREATE_NO_WINDOW);
 
-  return command;
+    return command;
 }
-
 
 #[tauri::command]
 fn hide_window(window: tauri::Window) {
@@ -62,16 +63,21 @@ fn run(path: &str) -> bool {
     };
 }
 
-
 #[tauri::command]
 fn search(search_input: &str) -> Vec<Runnable> {
     if search_input.trim().len() < 2 {
         return Vec::new();
     }
 
-    let user_profile = std::env::var("USERPROFILE").expect("USERPROFILE not set").to_string();
-    let app_data = std::env::var("APPDATA").expect("APPDATA not set").to_string();
-    let program_data = std::env::var("ProgramData").expect("Program Data not set").to_string();
+    let user_profile = std::env::var("USERPROFILE")
+        .expect("USERPROFILE not set")
+        .to_string();
+    let app_data = std::env::var("APPDATA")
+        .expect("APPDATA not set")
+        .to_string();
+    let program_data = std::env::var("ProgramData")
+        .expect("Program Data not set")
+        .to_string();
 
     let dirs_to_look_in = vec![
         user_profile + "\\Desktop",
@@ -81,7 +87,13 @@ fn search(search_input: &str) -> Vec<Runnable> {
 
     let mut apps: Vec<String> = SearchBuilder::default()
         .location(dirs_to_look_in[0].to_string())
-        .more_locations(dirs_to_look_in.iter().skip(1).map(|s| s.to_string()).collect())
+        .more_locations(
+            dirs_to_look_in
+                .iter()
+                .skip(1)
+                .map(|s| s.to_string())
+                .collect(),
+        )
         .search_input(search_input.to_string())
         .ext(".lnk|.exe")
         .ignore_case()
@@ -95,9 +107,17 @@ fn search(search_input: &str) -> Vec<Runnable> {
         .iter()
         .rev()
         .take(10)
-        .map(|app| Runnable::new(
-                app.to_string().split(path::MAIN_SEPARATOR).last().unwrap().replace(".lnk", "").to_string(),
-                app.to_string()))
+        .map(|app| {
+            Runnable::new(
+                app.to_string()
+                    .split(path::MAIN_SEPARATOR)
+                    .last()
+                    .unwrap()
+                    .replace(".lnk", "")
+                    .to_string(),
+                app.to_string(),
+            )
+        })
         .collect();
 }
 
@@ -120,12 +140,7 @@ fn sort_by_match(search_input: &&str, entries: &mut Vec<String>) {
             .fuzzy_match(a, search_input)
             .unwrap_or(0)
             .abs()
-            .cmp(
-                &matcher
-                    .fuzzy_match(b, search_input)
-                    .unwrap_or(0)
-                    .abs(),
-            )
+            .cmp(&matcher.fuzzy_match(b, search_input).unwrap_or(0).abs())
     });
 }
 
@@ -149,6 +164,9 @@ fn main() {
                 .move_window(tauri_plugin_positioner::Position::Center)
                 .expect("Error positioning window");
 
+            #[cfg(any(windows, target_os = "macos"))]
+            set_shadow(&window, true).unwrap();
+
             show_window(window);
             return Ok(());
         })
@@ -159,10 +177,10 @@ fn main() {
                     let window = app.get_window("main").unwrap();
                     window.show().unwrap();
                     window.center().unwrap();
-                },
+                }
                 "quit" => {
                     std::process::exit(0);
-                },
+                }
                 _ => {}
             },
             _ => {}
@@ -174,7 +192,12 @@ fn main() {
             }
             _ => {}
         })
-        .invoke_handler(tauri::generate_handler![search, run, hide_window, show_window])
+        .invoke_handler(tauri::generate_handler![
+            search,
+            run,
+            hide_window,
+            show_window
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
