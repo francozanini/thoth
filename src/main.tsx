@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { register } from "@tauri-apps/api/globalShortcut";
-import { appWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api";
 
 document.addEventListener("keydown", (event) => {
