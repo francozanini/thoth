@@ -71,7 +71,7 @@ function App() {
               {runnables.map((runnable) => (
                 <CommandItem
                   key={runnable.exec}
-                  onSelect={handleCommandSelected}
+                  onSelect={() => handleCommandSelected(runnable.exec)}
                 >
                   <span>{runnable.name}</span>
                 </CommandItem>
